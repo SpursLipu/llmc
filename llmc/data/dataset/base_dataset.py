@@ -89,11 +89,18 @@ class BaseDataset(metaclass=ABCMeta):
                             for qa in data:
                                 question = qa['question']
                                 gt_answer = qa['answer']
+
+                                # LLAVA
                                 prompt = (
                                     f'USER: <image>\n{question}\nASSISTANT: {gt_answer}'
                                 )
+
+                                # # InternVL2
+                                prompt = f"<|im_start|>system\n你是商汤科技开发的日日新多模态大模型，英文名叫SenseChat, 是一个有用无害的人工智能助手。<|im_end|>\n<|im_start|>user\n<image>\n{question}<<|im_end|>\n<|im_start|>assistant\n{gt_answer}"
+
                                 raw_image = Image.open(img_path)
                                 self.calib_dataset.append((prompt, raw_image))
+
                         except FileNotFoundError:
                             logger.warning(f'QA file not found for image: {img_path}')
                         except Exception as e:

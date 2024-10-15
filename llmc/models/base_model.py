@@ -110,6 +110,10 @@ class BaseModel(metaclass=ABCMeta):
                 super().__init__()
                 self.module = module
 
+                # for llava
+                if hasattr(module, 'self_attn'):
+                    self.self_attn = self.module.self_attn
+
             def forward(self, inp, **kwargs):
                 first_block_input['data'].append(inp)
                 if 'output_router_logits' in kwargs:
@@ -131,11 +135,19 @@ class BaseModel(metaclass=ABCMeta):
                     self.model(data.to(next(self.model.parameters()).device))
                 elif data_type == 'img_txt':
                     data = {
-                        k: v.to(next(self.model.parameters()).device)
+                        k: v.to(next(self.model.parameters()).device) if isinstance(v, torch.Tensor) else v
                         for k, v in data.items()
                     }
-                    self.vlm_model.generate(**data, max_new_tokens=200, do_sample=False)
-            except ValueError:
+                    if 'max_new_tokens' not in data:
+                        data['max_new_tokens'] = 256
+                    if 'do_sample' not in data:
+                        data['do_sample'] = False
+
+                    if 'pixel_values' in data:
+                        data['pixel_values'] = data['pixel_values'].to(self.vlm_model.dtype)
+
+                    self.vlm_model.generate(**data)
+            except ValueError as ex:
                 pass
         self.first_block_input = first_block_input
         if data_type == 'img_txt':

@@ -158,6 +158,12 @@ def vlm_clip_min(calib_dataset, processor, n_samples):
         samples['raw_images'].append(samples_native['raw_images'][i])
     return samples
 
+@PREPROC_REGISTRY
+def internvl_preporcess(calib_dataset, processor, n_samples, max_seq_len):
+    # sample dataset
+    samples_native = vlm_native(calib_dataset, processor, n_samples)
+    return samples_native
+
 
 @PREPROC_REGISTRY
 def random_truncate_txt(calib_dataset, tokenizer, n_samples, seq_len):

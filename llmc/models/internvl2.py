@@ -1,9 +1,12 @@
 from loguru import logger
+import torch
 from transformers import AutoConfig, AutoModelForCausalLM
+from transformers import AutoTokenizer
 
 from llmc.utils.registry_factory import MODEL_REGISTRY
 
 from .internlm2 import InternLM2
+from ..data.dataset.internvl2_preprocess import InternVL2_PreProcess
 
 
 @MODEL_REGISTRY
@@ -28,3 +31,13 @@ class InternVL2(InternLM2):
         if not self.use_cache:
             if hasattr(self.model_config, 'use_cache'):
                 self.model_config.use_cache = False
+        
+        self.vision_tower = self.vlm_model.vision_model
+        self.multi_modal_projector = self.vlm_model.mlp1
+        # self.vlm_model.img_context_token_id = 92546
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
+        self.vlm_model.img_context_token_id = self.tokenizer.convert_tokens_to_ids('<IMG_CONTEXT>')
+
+        self.model.processor = InternVL2_PreProcess(tokenizer=self.tokenizer)
+        self.processor = InternVL2_PreProcess(tokenizer=self.tokenizer)
+
